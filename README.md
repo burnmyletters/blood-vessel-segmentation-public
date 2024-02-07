@@ -25,6 +25,11 @@ kaggle competitions download -c blood-vessel-segmentation
 http://human-organ-atlas.esrf.eu
 ```
 
+If you want to skip the initial training without pseudo, you can download the images with pseudo-labels from Kaggle.
+```
+kaggle datasets download -d igorkrashenyi/50um-ladaf-2020-31-kidney-pag-0-01-0-02-jp2
+```
+
 ## Setting up the environment 
 
 ```bash
@@ -44,7 +49,13 @@ pip install -r requirements.txt
 
 Train model with default configuration
 
+Note: don't forget to modify data_path in bash sripts and in generate_mutliview and generate_mutliview_pseudo files.
+
 ```bash
+# generate multiview
+cd scripts
+python generate_mutliview.py
+
 # train on base model
 sh ./train.sh
 
@@ -57,4 +68,8 @@ sh ./train_pseudo_3d.sh
 
 # train on 2d model with pseudo
 sh ./train_pseudo_v2.sh
+
+# Note: if you want to train the best setup which was not submitted to the cometition run 
+sh ./train_pseudo.sh
+
 ```
