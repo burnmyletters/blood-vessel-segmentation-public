@@ -1,0 +1,2 @@
+python -m src.train --config-name=train_pseudo_3d.yaml data.fold=0 trainer.max_epochs=500 #paths.data_dir=/path/to/data/
+python -m src.train --config-name=train_pseudo_3d.yaml data.fold=1 trainer.max_epochs=500 #paths.data_dir=/path/to/data/

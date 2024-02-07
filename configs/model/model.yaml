@@ -1,0 +1,85 @@
+_target_: src.models.module.LitModule
+
+optimizer:
+  _target_: torch.optim.RAdam
+#  _target_: src.models.fancy_models.radam.Over9000
+  _partial_: true
+  lr: 3e-4
+  # weight_decay: 0.0
+
+#scheduler:
+#  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+#  _partial_: true
+#  mode: min
+#  factor: 0.3
+#  patience: 3
+#  verbose: true
+#scheduler:
+#  _target_: torch.optim.lr_scheduler.OneCycleLR
+#  _partial_: true
+#  max_lr: 3e-4
+#  epochs: 30
+#  steps_per_epoch: 400
+#  verbose: true
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  eta_min: 1e-6
+  T_max: 17000 #for main dataset
+#  T_max: 35250 #for main dataset
+
+#  T_0: 25
+  verbose: false
+
+# archs = [
+#        Unet,
+#        UnetPlusPlus,
+#        MAnet,
+#        Linknet,
+#        FPN,
+#        PSPNet,
+#        DeepLabV3,
+#        DeepLabV3Plus,
+#        PAN,
+#    ]
+
+net:
+  _target_: segmentation_models_pytorch.create_model
+  arch: UnetPlusPlus
+  encoder_name: tu-tf_efficientnet_b5 #tu-resnetblur50 # tu-tf_efficientnet_b5 #mit_b3 #"tu-tf_efficientnet_b3"
+  encoder_weights: "imagenet"
+  in_channels: ${data.in_channels}
+  classes: 1
+
+#net:
+#  _target_: src.models.components.backbones_unet_wrapper.create_model
+#  arch: Unet
+#  encoder_name: 'convnext_base'
+#  in_channels: ${data.in_channels}
+#  classes: 1
+
+#net:
+#  _target_: src.models.components.transunet.create_model
+#  arch: TransUnet
+#  encoder_name: 'ViT'
+#  in_channels: ${data.in_channels}
+#  classes: 1
+
+
+
+loss:
+  #  _target_: segmentation_models_pytorch.losses.SoftBCEWithLogitsLoss
+#  _target_: src.models.components.losses.BCEDiceLoss
+# _target_: src.models.components.losses.SoftDiceCLDice
+ _target_: src.models.components.losses.BoundaryDoULoss
+
+#_target_
+
+# compile model for faster training with pytorch 2.0
+compile: false
+
+output_path: "${paths.output_dir}/traced/"
+in_channels: ${data.in_channels}
+surface_dice_calculate: True
+img_size: ${data.img_size}

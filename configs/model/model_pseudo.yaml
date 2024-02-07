@@ -1,0 +1,36 @@
+_target_: src.models.module.LitModule
+
+optimizer:
+  _target_: torch.optim.RAdam
+  #  _target_: src.models.fancy_models.radam.Over9000
+  _partial_: true
+  lr: 3e-4
+  # weight_decay: 0.0
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  eta_min: 1e-6
+  #  T_max: 17000 #for main dataset
+  T_max: 34000 #for main dataset
+
+  #  T_0: 25
+  verbose: false
+
+net:
+  _target_: segmentation_models_pytorch.create_model
+  arch: UnetPlusPlus
+  encoder_name: tu-tf_efficientnet_b5 #tu-hrnet_w18_ssld.paddle_in1k #tu-maxvit_tiny_tf_512.in1k #tu-resnetblur50 # tu-tf_efficientnet_b5 #mit_b3 #"tu-tf_efficientnet_b3"
+  encoder_weights: "imagenet"
+  in_channels: ${data.in_channels}
+  classes: 1
+  decoder_attention_type: scse
+
+loss:
+  _target_: src.models.components.losses.BoundaryDoULoss
+compile: false
+
+output_path: "${paths.output_dir}/traced/"
+in_channels: ${data.in_channels}
+surface_dice_calculate: True
+img_size: ${data.img_size}

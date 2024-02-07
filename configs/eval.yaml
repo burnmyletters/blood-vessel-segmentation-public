@@ -1,0 +1,18 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - data: datamodule # choose datamodule with `test_dataloader()` for evaluation
+  - model: model
+  - logger: null
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+
+task_name: "eval"
+
+tags: ["dev"]
+
+# passing checkpoint path is necessary for evaluation
+ckpt_path: /home/igor/blood-vessel-segmentation/logs/train/runs/Unet_efficientnet-b0_size_2560_2048_bs16_segmentation_models_pytorch.losses.SoftBCEWithLogitsLoss/checkpoints/epoch_019.ckpt

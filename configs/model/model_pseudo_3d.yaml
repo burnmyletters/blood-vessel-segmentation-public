@@ -1,0 +1,42 @@
+_target_: src.models.module3d.LitModule
+
+optimizer:
+  _target_: torch.optim.SGD
+  _partial_: true
+  lr: 1e-2
+  weight_decay: 3e-5
+  momentum: 0.99
+  nesterov: True
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  eta_min: 1e-6
+  T_max: 125000 #for main dataset
+
+  #  T_0: 25
+  verbose: false
+
+net:
+  _target_: monai.networks.nets.DynUNet
+  spatial_dims: 3
+  in_channels: 1
+  out_channels: 1
+  kernel_size:
+    [[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]]
+  strides: [[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+  upsample_kernel_size: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+  #  filters: [64, 96, 128, 192, 256, 384, 512]
+  dropout: 0.1 #0.1
+#  img_size: ${data.img_size}
+
+loss:
+  _target_: src.models.components.losses.BoundaryDoULoss3D
+
+compile: false
+
+output_path: "${paths.output_dir}/traced/"
+#in_channels: ${model.in_channels}
+surface_dice_calculate: False
+
+img_size: ${data.img_size}

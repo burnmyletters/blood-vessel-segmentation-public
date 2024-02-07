@@ -1,0 +1,20 @@
+_target_: src.data.datamodule_v2.DataModule
+data_dir: ${paths.data_dir}
+batch_size: 32
+num_workers: 32
+pin_memory: False
+
+gt_df: ${paths.root_dir}/data/gt_extended_with_pseudo.csv
+
+fold: 0
+img_size: [512, 512]
+upscale: False
+
+aug_scheme: hard #hard #severe #d4_scaled #hard_random #hard_random # hard # d4 #hard_random
+
+use_cutmix: True
+in_channels: 3
+train_mutliplier: 2
+# norm_scheme: "max" #"minmax" "minmax_organ"
+norm_scheme: minmax_organ
+train_pseudo: False

@@ -1,0 +1,13 @@
+_target_: src.data.datamodule_3d.DataModule
+data_dir: ${paths.data_dir}
+batch_size: 4
+num_workers: 24
+pin_memory: False
+
+#fold: debug
+fold: 0
+img_size: [192, 192, 192]
+
+samples_per_epoch: 2000
+val_samples_per_epoch: 200
+# norm_scheme: "max" #"minmax" "minmax_organ"
