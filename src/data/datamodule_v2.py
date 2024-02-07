@@ -966,7 +966,6 @@ class DataModule(LightningDataModule):
 
 
 if __name__ == "__main__":
-
     datamodule = DataModule(
         aug_scheme="hard",
         use_cutmix=True,

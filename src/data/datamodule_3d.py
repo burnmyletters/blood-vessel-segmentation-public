@@ -545,7 +545,6 @@ class DataModule(LightningDataModule):
 
 
 if __name__ == "__main__":
-
     dataset = VesselDataset3D(mode="train", fold="debug")
     for i in range(len(dataset)):
         data = dataset[i]
