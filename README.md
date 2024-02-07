@@ -13,7 +13,8 @@ https://www.kaggle.com/competitions/blood-vessel-segmentation/overview
 
 ## Description
 
-Codebase for SenNet + HOA - Hacking the Human Vasculature in 3D solution (#d Place)
+Codebase for SenNet + HOA - Hacking the Human Vasculature in 3D solution (4th Place Solution)
+The detailed description is here: https://www.kaggle.com/competitions/blood-vessel-segmentation/discussion/475052 
 
 ## Download data 
 ```bash
