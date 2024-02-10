@@ -40,7 +40,7 @@ git clone https://github.com/burnmyletters/blood-vessel-segmentation
 cd blood-vessel-segmentation
 
 # [OPTIONAL] create conda environment
-conda create -n bvs python=3.9
+conda create -n bvs python=3.10.9
 conda activate bvs
 
 # install requirements
