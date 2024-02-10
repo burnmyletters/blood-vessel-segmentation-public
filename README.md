@@ -36,8 +36,8 @@ kaggle datasets download -d igorkrashenyi/50um-ladaf-2020-31-kidney-pag-0-01-0-0
 
 ```bash
 # clone project
-git clone https://github.com/burnmyletters/blood-vessel-segmentation
-cd blood-vessel-segmentation
+git clone https://github.com/burnmyletters/blood-vessel-segmentation-public
+cd blood-vessel-segmentation-public
 
 # [OPTIONAL] create conda environment
 conda create -n bvs python=3.10.9
