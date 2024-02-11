@@ -44,14 +44,14 @@ predict_on = [
         "UnetPlusPlus",
         "tu-tf_efficientnet_b5",
         3,
-        "UnetPlusPlus_tu-tf_efficientnet_b5_size_3_512_bs32_hard_minmax_organ_novoi_fx",
+        "UnetPlusPlus_tu-tf_efficientnet_b5_size_3_512_bs32_hard",
         1.0,
     ],
     [
         "UnetPlusPlus",
         "tu-tf_efficientnet_b6",
         3,
-        "UnetPlusPlus_tu-tf_efficientnet_b6_src.models.components.losses.BoundaryDoULoss_size_3_512_bs32_hard_minmax_organ_novoi_fx",
+        "UnetPlusPlus_tu-tf_efficientnet_b6_size_3_512_bs32_hard",
         1.5,
     ],
 ]
