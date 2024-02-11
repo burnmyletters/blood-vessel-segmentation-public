@@ -3,10 +3,11 @@ import glob
 import numpy as np
 import cv2
 import tqdm
+import argparse  # Import argparse
+
 
 TESTING = False
 
-dataset_path = "mnt/working/blood-vessel-segmentation/"
 
 
 def load_volume(dataset):
@@ -66,3 +67,11 @@ for dataset in glob.glob(os.path.join(dataset_path, "train", "*")):
             save_volume(volume_zy, target_zy, dataset_zy)
     else:
         print("skipping", dataset_zy)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process blood vessel segmentation data.')
+    parser.add_argument('dataset_path', type=str, help='Path to the dataset directory')
+    args = parser.parse_args()
+    
+    dataset_path = args.dataset_path
