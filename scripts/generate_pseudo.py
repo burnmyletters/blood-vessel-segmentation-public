@@ -11,10 +11,7 @@ from typing import Union, Dict, Tuple
 import monai
 import ttach as tta
 import re
-
-
-DATASET_FOLDER = "/mnt/working/blood-vessel-segmentation/train_ext/"
-logs_base_path = "/home/igor/blood-vessel-segmentation/logs/train/runs/"
+import argparse
 
 
 def rename_keys(original_dict: Dict, pattern: str) -> Dict:
@@ -47,7 +44,7 @@ predict_on = [
         "UnetPlusPlus",
         "tu-tf_efficientnet_b5",
         3,
-        "UnetPlusPlus_tu-tf_efficientnet_b5_src.models.components.losses.BoundaryDoULoss_size_3_512_bs32_hard_minmax_organ_novoi_fx",
+        "UnetPlusPlus_tu-tf_efficientnet_b5_size_3_512_bs32_hard_minmax_organ_novoi_fx",
         1.0,
     ],
     [
@@ -159,54 +156,26 @@ class BuildDataset(torch.utils.data.Dataset):
         return {"slice": slice_data, "slice_index": idx, "axis": axis}
 
 
-datasets = sorted(glob(f"{DATASET_FOLDER}/50um*_"))
+def main():
+    datasets = sorted(glob(f"{DATASET_FOLDER}/50um*_"))
 
-print(len(datasets))
+    print(len(datasets))
 
-tta_models = []
-weights = []
+    tta_models = []
+    weights = []
 
-use_top_only = True
-folds2predict = [0, 1]
+    use_top_only = True
+    folds2predict = [0, 1]
 
-for model_config in tqdm(predict_on):
-    #     for fold in range(3):
-    for fold in folds2predict:
-        if use_top_only:
-            model_path = sorted(
-                glob(
-                    f"{logs_base_path}/{model_config[3]}/{fold}/checkpoints/epoch*.ckpt"
-                )
-            )[-1]
-            state_dict = rename_keys(
-                torch.load(model_path, map_location="cpu")["state_dict"], "net."
-            )
-            model = to_device(
-                smp.create_model(
-                    arch=model_config[0],
-                    encoder_name=model_config[1],
-                    in_channels=model_config[2],
-                    encoder_weights=None,
-                )
-            )
-            model.load_state_dict(state_dict)
-            model.eval()
-            # model = torch.nn.DataParallel(model)
-
-            tta_models.append(model)
-
-            tta_models.append(
-                tta.SegmentationTTAWrapper(
-                    model, tta.aliases.d4_transform(), merge_mode="mean"
-                )
-            )
-            weights.append(model_config[-1])
-        else:
-            for model_path in sorted(
-                glob(
-                    f"{logs_base_path}/{model_config[3]}/{fold}/checkpoints/epoch*.ckpt"
-                )
-            ):
+    for model_config in tqdm(predict_on):
+        #     for fold in range(3):
+        for fold in folds2predict:
+            if use_top_only:
+                model_path = sorted(
+                    glob(
+                        f"{logs_base_path}/{model_config[3]}/{fold}/checkpoints/epoch*.ckpt"
+                    )
+                )[-1]
                 state_dict = rename_keys(
                     torch.load(model_path, map_location="cpu")["state_dict"], "net."
                 )
@@ -218,83 +187,134 @@ for model_config in tqdm(predict_on):
                         encoder_weights=None,
                     )
                 )
-
                 model.load_state_dict(state_dict)
                 model.eval()
                 # model = torch.nn.DataParallel(model)
+
+                tta_models.append(model)
 
                 tta_models.append(
                     tta.SegmentationTTAWrapper(
                         model, tta.aliases.d4_transform(), merge_mode="mean"
                     )
                 )
-                # tta_models.append(model)
                 weights.append(model_config[-1])
+            else:
+                for model_path in sorted(
+                    glob(
+                        f"{logs_base_path}/{model_config[3]}/{fold}/checkpoints/epoch*.ckpt"
+                    )
+                ):
+                    state_dict = rename_keys(
+                        torch.load(model_path, map_location="cpu")["state_dict"], "net."
+                    )
+                    model = to_device(
+                        smp.create_model(
+                            arch=model_config[0],
+                            encoder_name=model_config[1],
+                            in_channels=model_config[2],
+                            encoder_weights=None,
+                        )
+                    )
 
-os.makedirs(DATASET_FOLDER, exist_ok=True)
+                    model.load_state_dict(state_dict)
+                    model.eval()
+                    # model = torch.nn.DataParallel(model)
 
-rles, ids = [], []
-with torch.no_grad():
-    for dataset in datasets:
-        folder = dataset.split("/")[-1]
-        os.makedirs(
-            f"{DATASET_FOLDER}/{folder}/labels",
-            exist_ok=True,
-        )
+                    tta_models.append(
+                        tta.SegmentationTTAWrapper(
+                            model, tta.aliases.d4_transform(), merge_mode="mean"
+                        )
+                    )
+                    # tta_models.append(model)
+                    weights.append(model_config[-1])
 
-        test_dataset = BuildDataset(dataset, is_test=True)
-        test_loader = DataLoader(
-            test_dataset, batch_size=1, num_workers=0, shuffle=False, pin_memory=False
-        )
-        ls_images = sorted(glob(f"{dataset}/images/*.jp2"))
+    os.makedirs(DATASET_FOLDER, exist_ok=True)
 
-        print(f"processing {dataset}")
-        print(f"found images: {len(ls_images)}")
-
-        y_preds = np.zeros(test_dataset.shape_orig, dtype=np.half)
-
-        pbar = tqdm(
-            enumerate(test_loader), total=len(test_loader), desc=f"Inference {dataset}"
-        )
-        for step, batch in pbar:
-            images = to_device(batch["slice"])
-            axis = batch["axis"][0]
-            idx = batch["slice_index"].numpy()[0]
-
-            preds = 0
-            for tta_model, weight in zip(tta_models, weights):
-                preds += weight * monai.inferers.sliding_window_inference(
-                    inputs=images,
-                    predictor=tta_model,
-                    sw_batch_size=32,
-                    roi_size=(800, 800),
-                    overlap=0.25,
-                    padding_mode="reflect",
-                    mode="gaussian",
-                    sw_device="cuda",
-                    device="cuda",
-                    progress=False,
-                )
-            if axis == "X":
-                y_preds[idx, :, :] += (
-                    (preds / sum(weights)).squeeze().sigmoid().cpu().numpy() / 3.0
-                ).astype(np.half)
-            elif axis == "Y":
-                y_preds[:, idx, :] += (
-                    (preds / sum(weights)).squeeze().sigmoid().cpu().numpy() / 3.0
-                ).astype(np.half)
-            elif axis == "Z":
-                y_preds[:, :, idx] += (
-                    (preds / sum(weights)).squeeze().sigmoid().cpu().numpy() / 3.0
-                ).astype(np.half)
-
-        # np.save(f"{DATASET_FOLDER}/{folder}.npy", y_preds)
-
-        for i, pred in tqdm(enumerate(y_preds)):
-            cv2.imwrite(
-                f'{DATASET_FOLDER}/{folder}/labels/{ls_images[i].split("/")[-1].replace(".jp2", ".png")}',
-                (pred * 255).astype(np.uint8),
+    rles, ids = [], []
+    with torch.no_grad():
+        for dataset in datasets:
+            folder = dataset.split("/")[-1]
+            os.makedirs(
+                f"{DATASET_FOLDER}/{folder}/labels",
+                exist_ok=True,
             )
 
-        # del test_dataset, test_loader, y_preds
-        # gc.collect()
+            test_dataset = BuildDataset(dataset, is_test=True)
+            test_loader = DataLoader(
+                test_dataset,
+                batch_size=1,
+                num_workers=0,
+                shuffle=False,
+                pin_memory=False,
+            )
+            ls_images = sorted(glob(f"{dataset}/images/*.jp2"))
+
+            print(f"processing {dataset}")
+            print(f"found images: {len(ls_images)}")
+
+            y_preds = np.zeros(test_dataset.shape_orig, dtype=np.half)
+
+            pbar = tqdm(
+                enumerate(test_loader),
+                total=len(test_loader),
+                desc=f"Inference {dataset}",
+            )
+            for step, batch in pbar:
+                images = to_device(batch["slice"])
+                axis = batch["axis"][0]
+                idx = batch["slice_index"].numpy()[0]
+
+                preds = 0
+                for tta_model, weight in zip(tta_models, weights):
+                    preds += weight * monai.inferers.sliding_window_inference(
+                        inputs=images,
+                        predictor=tta_model,
+                        sw_batch_size=32,
+                        roi_size=(800, 800),
+                        overlap=0.25,
+                        padding_mode="reflect",
+                        mode="gaussian",
+                        sw_device="cuda",
+                        device="cuda",
+                        progress=False,
+                    )
+                if axis == "X":
+                    y_preds[idx, :, :] += (
+                        (preds / sum(weights)).squeeze().sigmoid().cpu().numpy() / 3.0
+                    ).astype(np.half)
+                elif axis == "Y":
+                    y_preds[:, idx, :] += (
+                        (preds / sum(weights)).squeeze().sigmoid().cpu().numpy() / 3.0
+                    ).astype(np.half)
+                elif axis == "Z":
+                    y_preds[:, :, idx] += (
+                        (preds / sum(weights)).squeeze().sigmoid().cpu().numpy() / 3.0
+                    ).astype(np.half)
+
+            # np.save(f"{DATASET_FOLDER}/{folder}.npy", y_preds)
+
+            for i, pred in tqdm(enumerate(y_preds)):
+                cv2.imwrite(
+                    f'{DATASET_FOLDER}/{folder}/labels/{ls_images[i].split("/")[-1].replace(".jp2", ".png")}',
+                    (pred * 255).astype(np.uint8),
+                )
+
+            # del test_dataset, test_loader, y_preds
+            # gc.collect()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Segmentation Model Inference")
+    parser.add_argument(
+        "--dataset_folder", type=str, required=True, help="Path to the dataset folder"
+    )
+    parser.add_argument(
+        "--logs_base_path",
+        type=str,
+        required=True,
+        help="Path to the logs base directory",
+    )
+    args = parser.parse_args()
+    DATASET_FOLDER = args.dataset_folder
+    logs_base_path = args.logs_base_path
