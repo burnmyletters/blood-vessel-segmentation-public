@@ -45,7 +45,7 @@ def save_volume(volume, target, dataset):
         cv2.imwrite(os.path.join(dataset, "labels", f"{z:04d}.tif"), target[z])
 
 def main():
-    for dataset in glob.glob(os.path.join(dataset_path, "train", "*")):
+    for dataset in glob.glob(os.path.join(dataset_path, "train", "kidney*")):
         dataset_xz = dataset + "_xz"
         dataset_zy = dataset + "_zy"
         skip_xz = os.path.exists(dataset_xz)
