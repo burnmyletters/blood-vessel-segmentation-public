@@ -36,9 +36,9 @@ def load_volume(dataset):
 
 
 def save_volume(volume, target, dataset):
-    os.mkdirs(dataset, exist_ok=True)
-    os.mkdirs(os.path.join(dataset, "labels"), exist_ok=True)
-    os.mkdirs(os.path.join(dataset, "images"), exist_ok=True)
+    os.makedirs(dataset, exist_ok=True)
+    os.makedirs(os.path.join(dataset, "labels"), exist_ok=True)
+    os.makedirs(os.path.join(dataset, "images"), exist_ok=True)
 
     for z in tqdm.tqdm(range(volume.shape[0])):
         cv2.imwrite(os.path.join(dataset, "images", f"{z:04d}.tif"), volume[z])
